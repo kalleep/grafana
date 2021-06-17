@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/grafana/grafana/pkg/services/accesscontrol"
 	"github.com/grafana/grafana/pkg/services/accesscontrol/evaluator"
 
@@ -257,13 +259,28 @@ func setupAccessControlScenarioContext(t *testing.T, cfg *setting.Cfg, url strin
 	cfg.FeatureToggles = make(map[string]bool)
 	cfg.FeatureToggles["accesscontrol"] = true
 
+	sc := setupScenarioContext(t, url)
+
+	sc.m.Use(func(c *macaron.Context) {
+		user := &models.SignedInUser{}
+		reqCtx := &models.ReqContext{
+			Context:      c,
+			SignedInUser: user,
+			IsSignedIn:   true,
+			SkipCache:    true,
+		}
+		c.Map(reqCtx)
+	})
+
+	store := sqlstore.InitTestDB(t)
+	assert.NoError(t, store.Init())
+
 	hs := &HTTPServer{
 		Cfg:           cfg,
+		SQLStore:      store,
 		RouteRegister: routing.NewRouteRegister(),
 		AccessControl: &fakeAccessControl{permissions: permissions},
 	}
-
-	sc := setupScenarioContext(t, url)
 
 	hs.registerRoutes()
 	hs.RouteRegister.Register(sc.m.Router)
@@ -276,5 +293,6 @@ type accessControlTestCase struct {
 	desc         string
 	url          string
 	method       string
+	body         string
 	permissions  []*accesscontrol.Permission
 }

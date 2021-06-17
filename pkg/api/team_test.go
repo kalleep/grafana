@@ -1,7 +1,11 @@
 package api
 
 import (
+	"bytes"
+	"net/http/httptest"
 	"testing"
+
+	"github.com/grafana/grafana/pkg/services/accesscontrol"
 
 	"github.com/grafana/grafana/pkg/services/sqlstore"
 	"github.com/grafana/grafana/pkg/setting"
@@ -40,7 +44,8 @@ func TestTeamAPIEndpoint(t *testing.T) {
 		}
 
 		hs := &HTTPServer{
-			Cfg: setting.NewCfg(),
+			Cfg:           setting.NewCfg(),
+			AccessControl: &fakeAccessControl{isDisabled: true},
 		}
 
 		loggedInUserScenario(t, "When calling GET on", "/api/teams/search", func(sc *scenarioContext) {
@@ -92,8 +97,9 @@ func TestTeamAPIEndpoint(t *testing.T) {
 		defer bus.ClearBusHandlers()
 
 		hs := &HTTPServer{
-			Cfg: setting.NewCfg(),
-			Bus: bus.GetBus(),
+			Cfg:           setting.NewCfg(),
+			Bus:           bus.GetBus(),
+			AccessControl: &fakeAccessControl{isDisabled: true},
 		}
 		hs.Cfg.EditorsCanAdmin = true
 
@@ -159,4 +165,38 @@ func TestTeamAPIEndpoint(t *testing.T) {
 			assert.False(t, stub.warnCalled)
 		})
 	})
+}
+
+func TestTeams_AccessControl(t *testing.T) {
+	tests := []accessControlTestCase{
+		{
+			url:          "/api/teams",
+			method:       http.MethodPost,
+			desc:         "CreateTeam should return 200 for user with correct permissions",
+			expectedCode: http.StatusOK,
+			permissions: []*accesscontrol.Permission{
+				{Action: accesscontrol.ActionTeamsCreate},
+			},
+			body: `{"name":"test"}`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			cfg := setting.NewCfg()
+			sc, hs := setupAccessControlScenarioContext(t, cfg, test.url, test.permissions)
+			sc.resp = httptest.NewRecorder()
+			hs.SettingsProvider = &setting.OSSImpl{Cfg: cfg}
+
+			var err error
+			sc.req, err = http.NewRequest(test.method, test.url, bytes.NewReader([]byte(test.body)))
+			assert.NoError(t, err)
+			sc.req.Header.Set("Content-Type", "application/json")
+
+			sc.exec()
+			assert.Equal(t, test.expectedCode, sc.resp.Code)
+			t.Log(sc.resp.Body.String())
+		})
+	}
+
 }
