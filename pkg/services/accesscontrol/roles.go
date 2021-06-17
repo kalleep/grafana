@@ -159,6 +159,22 @@ var provisioningAdminRole = RoleDTO{
 	},
 }
 
+var teamsAdminEditRole = RoleDTO{
+	Version: 1,
+	Name:    teamsAdminEdit,
+	Permissions: []Permission{
+		{
+			Action: ActionTeamsCreate,
+		},
+	},
+}
+
+var teamsAdminReadRole = RoleDTO{
+	Version:     1,
+	Name:        teamsAdminRead,
+	Permissions: []Permission{},
+}
+
 // FixedRoles provides a map of permission sets/roles which can be
 // assigned to a set of users. When adding a new resource protected by
 // Grafana access control the default permissions should be added to a
@@ -186,6 +202,9 @@ const (
 	serverAdminRead = "fixed:server:admin:read"
 
 	settingsAdminRead = "fixed:settings:admin:read"
+
+	teamsAdminEdit = "fixed:teams:admin:edit"
+	teamsAdminRead = "fixed:teams:admin:read"
 
 	usersAdminEdit = "fixed:users:admin:edit"
 	usersAdminRead = "fixed:users:admin:read"
