@@ -74,6 +74,9 @@ const (
 	ActionOrgUsersRemove     = "org.users:remove"
 	ActionOrgUsersRoleUpdate = "org.users.role:update"
 
+	// Teams actions
+	ActionTeamsCreate = "teams:create"
+
 	// LDAP actions
 	ActionLDAPUsersRead    = "ldap.user:read"
 	ActionLDAPUsersSync    = "ldap.user:sync"
