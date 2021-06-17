@@ -170,16 +170,16 @@ func (hs *HTTPServer) registerRoutes() {
 
 		// team (admin permission required)
 		apiRoute.Group("/teams", func(teamsRoute routing.RouteRegister) {
-			teamsRoute.Post("/", bind(models.CreateTeamCommand{}), routing.Wrap(hs.CreateTeam))
-			teamsRoute.Put("/:teamId", bind(models.UpdateTeamCommand{}), routing.Wrap(hs.UpdateTeam))
-			teamsRoute.Delete("/:teamId", routing.Wrap(hs.DeleteTeamByID))
-			teamsRoute.Get("/:teamId/members", routing.Wrap(hs.GetTeamMembers))
-			teamsRoute.Post("/:teamId/members", bind(models.AddTeamMemberCommand{}), routing.Wrap(hs.AddTeamMember))
-			teamsRoute.Put("/:teamId/members/:userId", bind(models.UpdateTeamMemberCommand{}), routing.Wrap(hs.UpdateTeamMember))
-			teamsRoute.Delete("/:teamId/members/:userId", routing.Wrap(hs.RemoveTeamMember))
-			teamsRoute.Get("/:teamId/preferences", routing.Wrap(hs.GetTeamPreferences))
-			teamsRoute.Put("/:teamId/preferences", bind(dtos.UpdatePrefsCmd{}), routing.Wrap(hs.UpdateTeamPreferences))
-		}, reqCanAccessTeams)
+			teamsRoute.Post("/", authorize(reqCanAccessTeams, accesscontrol.ActionTeamsCreate), bind(models.CreateTeamCommand{}), routing.Wrap(hs.CreateTeam))
+			teamsRoute.Put("/:teamId", reqCanAccessTeams, bind(models.UpdateTeamCommand{}), routing.Wrap(hs.UpdateTeam))
+			teamsRoute.Delete("/:teamId", reqCanAccessTeams, routing.Wrap(hs.DeleteTeamByID))
+			teamsRoute.Get("/:teamId/members", reqCanAccessTeams, routing.Wrap(hs.GetTeamMembers))
+			teamsRoute.Post("/:teamId/members", reqCanAccessTeams, bind(models.AddTeamMemberCommand{}), routing.Wrap(hs.AddTeamMember))
+			teamsRoute.Put("/:teamId/members/:userId", reqCanAccessTeams, bind(models.UpdateTeamMemberCommand{}), routing.Wrap(hs.UpdateTeamMember))
+			teamsRoute.Delete("/:teamId/members/:userId", reqCanAccessTeams, routing.Wrap(hs.RemoveTeamMember))
+			teamsRoute.Get("/:teamId/preferences", reqCanAccessTeams, routing.Wrap(hs.GetTeamPreferences))
+			teamsRoute.Put("/:teamId/preferences", reqCanAccessTeams, bind(dtos.UpdatePrefsCmd{}), routing.Wrap(hs.UpdateTeamPreferences))
+		})
 
 		// team without requirement of user to be org admin
 		apiRoute.Group("/teams", func(teamsRoute routing.RouteRegister) {
